@@ -16,7 +16,19 @@
 
 package protocol
 
+import "k8s.io/apimachinery/pkg/labels"
+
 type PredictionProfileKey interface {
+	// Pod Name space
+	Namespace() string
+	// Container Name
+	ContainerName() string
+	// Profiler Name
+	ProfilerName() string
+	// Stage Name
+	StageName() string
+	// Pod Selector Labels
+	Labels() labels.Labels
 }
 
 type PredictionProfile interface {
