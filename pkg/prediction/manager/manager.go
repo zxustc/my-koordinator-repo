@@ -29,6 +29,7 @@ type PredictionManager interface {
 	Started() bool
 	Register(...protocol.PredictionProfile) error
 	Unregister(...protocol.PredictionProfileKey) error
+	Update(...protocol.PredictionProfileKey) error
 	GetResult(key protocol.PredictionProfileKey) (protocol.PredictionResult, error)
 }
 
