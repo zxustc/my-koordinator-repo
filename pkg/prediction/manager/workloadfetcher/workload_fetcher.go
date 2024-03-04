@@ -28,24 +28,31 @@ var _ WorkloadFetcher = &workloadFetcherImpl{}
 type workloadFetcherImpl struct {
 }
 
+func InitWorkloadfetcher() *workloadFetcherImpl {
+	return &workloadFetcherImpl{}
+}
 func (w *workloadFetcherImpl) Run() error {
 	//TODO implement me
+	//Start to run the workload Fetcher
 	panic("implement me")
 }
 
 func (w *workloadFetcherImpl) Started() bool {
 	//TODO implement me
+	//If workloadfetcher is working or not?
 	panic("implement me")
 }
 
 func (w *workloadFetcherImpl) AddWorkloads(workload ...Workload) {
 	//TODO implement me
+	//Add new workload to workfetcher working list.
 	panic("implement me")
 }
 
 func (w *workloadFetcherImpl) RemoveWorkloads(workload ...Workload) {
 	//TODO implement me
 	panic("implement me")
+	//remove workload from workfetcher working list.
 }
 
 type Workload interface {

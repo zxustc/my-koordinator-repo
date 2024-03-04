@@ -16,25 +16,23 @@
 
 package protocol
 
-import "k8s.io/apimachinery/pkg/labels"
+import (
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 type PredictionProfileKey interface {
-	// Pod Name space
-	Namespace() string
-	// Container Name
-	ContainerName() string
-	// Profiler Name
-	ProfilerName() string
-	// Stage Name
-	StageName() string
-	// Pod Selector Labels
-	Labels() labels.Labels
+	//return type "workload" or "podSelector"
+	Type() string
+	//WorkloadName, Only valid in "workload"
+	WorkloadName() string
+	//WorkloadKind, Only valid in "workload"
+	WorkloadKind() string
+	//Label Selector
+	LabelSelector() *metav1.LabelSelector
 }
 
-type PredictionProfile interface {
-	PredictionProfileKey
-}
-
-type PredictionResult interface {
-	PredictionProfileKey
+type PredictionResultImpl struct {
+	ContainerName string
+	Resources     corev1.ResourceList
 }

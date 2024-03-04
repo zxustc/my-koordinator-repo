@@ -1,4 +1,4 @@
-package workload
+package workloadfetcher
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -6,11 +6,10 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var _ handler.EventHandler = &EnqueueRequestForWorkload{}
+//var _ handler.EventHandler = &EnqueueRequestForWorkload{}
 
 type EnqueueRequestForWorkload struct {
 	client.Client

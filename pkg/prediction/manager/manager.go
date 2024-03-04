@@ -17,31 +17,49 @@
 package manager
 
 import (
+	"fmt"
+
+	analysisv1alpha1 "github.com/koordinator-sh/koordinator/apis/analysis/v1alpha1"
+
 	"github.com/koordinator-sh/koordinator/pkg/prediction/manager/checkpoint"
 	"github.com/koordinator-sh/koordinator/pkg/prediction/manager/metricscollector"
 	"github.com/koordinator-sh/koordinator/pkg/prediction/manager/profiler"
 	"github.com/koordinator-sh/koordinator/pkg/prediction/manager/protocol"
 	"github.com/koordinator-sh/koordinator/pkg/prediction/manager/workloadfetcher"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type PredictionManager interface {
 	Run() error
 	Started() bool
-	Register(...protocol.PredictionProfile) error
-	Unregister(...protocol.PredictionProfileKey) error
-	GetResult(key protocol.PredictionProfileKey) (protocol.PredictionResult, error)
+	Register(analysisv1alpha1.RecommendationSpec, types.NamespacedName) error
+	Unregister(types.NamespacedName) error
+	GetResult(protocol.PredictionProfileKey) protocol.PredictPodStatus
 }
 
-var _ PredictionManager = &predictionMgrImpl{}
+var _ PredictionManager = &PredictionMgrImpl{}
 
-type predictionMgrImpl struct {
+// cluster state/ share state
+type PredictionMgrImpl struct {
 	metricsRepo     metricscollector.MetricsRepository
 	checkpoint      checkpoint.Checkpoint
 	workloadFetcher workloadfetcher.WorkloadFetcher
 	profiler        profiler.Profiler
+	clusterState    *protocol.ClusterState
 }
 
-func (p *predictionMgrImpl) Run() error {
+func InitPredictMgr() *PredictionMgrImpl {
+	predictMgr := &PredictionMgrImpl{
+		metricsRepo:     metricscollector.InitMetricRepo(),
+		checkpoint:      checkpoint.InitCheckpoint(),
+		workloadFetcher: workloadfetcher.InitWorkloadfetcher(),
+		profiler:        profiler.InitProfiler(),
+		clusterState:    protocol.NewClusterState(),
+	}
+	return predictMgr
+}
+
+func (p *PredictionMgrImpl) Run() error {
 	// run checkpoint to load all history data
 	// start workload fetcher waiting for workloads
 	// start metrics repo ready for collect
@@ -49,28 +67,45 @@ func (p *predictionMgrImpl) Run() error {
 	panic("implement me")
 }
 
-func (p *predictionMgrImpl) Started() bool {
+func (p *PredictionMgrImpl) Started() bool {
 	// return true only if all components are started
 	panic("implement me")
 }
 
-func (p *predictionMgrImpl) Register(profiles ...protocol.PredictionProfile) error {
+func (p *PredictionMgrImpl) Register(rec analysisv1alpha1.RecommendationSpec, id types.NamespacedName) error {
 	// return error if not started
-	// add workload to WorkloadFetcher
+	if !p.Started() {
+		return fmt.Errorf("Profiler did not start.")
+	}
+	p.clusterState.AddToList(rec, id)
 	// subscribe metric to metricsRepo
+	p.metricsRepo.Register()
 	// add model to Profiler
 	panic("implement me")
 }
 
-func (p *predictionMgrImpl) Unregister(keys ...protocol.PredictionProfileKey) error {
+func (p *PredictionMgrImpl) Unregister(id types.NamespacedName) error {
 	// return error if not started
 	// remove workload from WorkloadFetcher
 	// unsubscribe metric from metricsRepo
 	// remove model from Profiler
+	p.clusterState.RemoveFromList(id)
+	p.workloadFetcher.RemoveWorkloads()
+	p.metricsRepo.Unregister()
 	panic("implement me")
 }
 
-func (p *predictionMgrImpl) GetResult(key protocol.PredictionProfileKey) (protocol.PredictionResult, error) {
-	//TODO implement me
-	panic("implement me")
+func (p *PredictionMgrImpl) GetResult(key protocol.PredictionProfileKey) protocol.PredictPodStatus {
+	return p.clusterState.Result[key]
+}
+
+func (p *PredictionMgrImpl) AddtoList(id types.NamespacedName, key protocol.PredictionProfileKey) {
+}
+
+func (p *PredictionMgrImpl) GetList() protocol.PredictListMap {
+	return p.clusterState.RecommendationList
+}
+
+func (p *PredictionMgrImpl) UpdateCrdCache(key protocol.PredictionProfileKey, cache *analysisv1alpha1.Recommendation) {
+	p.clusterState.UpdateCrdCache(key, cache)
 }

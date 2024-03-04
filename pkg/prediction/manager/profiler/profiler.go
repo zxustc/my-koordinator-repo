@@ -21,13 +21,17 @@ import "github.com/koordinator-sh/koordinator/pkg/prediction/manager/protocol"
 type Profiler interface {
 	Run() error
 	Started() bool
-	GetResult(key protocol.PredictionProfileKey) (protocol.PredictionResult, error)
+	GetResult(protocol.PredictionProfileKey) protocol.PredictPodStatus
 }
 
 var _ Profiler = &profilerImpl{}
 
 type profilerImpl struct {
 	models map[ModelKey]Model
+}
+
+func InitProfiler() *profilerImpl {
+	return &profilerImpl{}
 }
 
 func (p *profilerImpl) Run() error {
@@ -44,7 +48,7 @@ func (p *profilerImpl) Started() bool {
 	panic("implement me")
 }
 
-func (p *profilerImpl) GetResult(key protocol.PredictionProfileKey) (protocol.PredictionResult, error) {
+func (p *profilerImpl) GetResult(key protocol.PredictionProfileKey) protocol.PredictPodStatus {
 	//TODO implement me
 	panic("implement me")
 }
