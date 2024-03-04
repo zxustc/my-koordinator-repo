@@ -18,3 +18,10 @@ package checkpoint
 
 type Checkpoint interface {
 }
+
+type checkpointImpl struct {
+}
+
+func InitCheckpoint() *checkpointImpl {
+	return &checkpointImpl{}
+}

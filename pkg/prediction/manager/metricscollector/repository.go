@@ -17,4 +17,22 @@
 package metricscollector
 
 type MetricsRepository interface {
+	Register()
+	Unregister()
+}
+
+type metricsRepositoryImpl struct {
+	//TODO
+}
+
+func InitMetricRepo() *metricsRepositoryImpl {
+	return &metricsRepositoryImpl{}
+}
+
+func (m *metricsRepositoryImpl) Register() {
+
+}
+
+func (m *metricsRepositoryImpl) Unregister() {
+
 }

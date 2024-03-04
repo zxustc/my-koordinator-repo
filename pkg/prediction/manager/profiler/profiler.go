@@ -30,6 +30,10 @@ type profilerImpl struct {
 	models map[ModelKey]Model
 }
 
+func InitProfiler() *profilerImpl {
+	return &profilerImpl{}
+}
+
 func (p *profilerImpl) Run() error {
 	// get groupings (pod/container belongs to same workload) list from workload fetcher
 	// create/update(args) model for each grouping

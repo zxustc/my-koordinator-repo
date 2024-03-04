@@ -17,6 +17,8 @@
 package manager
 
 import (
+	"fmt"
+
 	"github.com/koordinator-sh/koordinator/pkg/prediction/manager/checkpoint"
 	"github.com/koordinator-sh/koordinator/pkg/prediction/manager/metricscollector"
 	"github.com/koordinator-sh/koordinator/pkg/prediction/manager/profiler"
@@ -32,16 +34,32 @@ type PredictionManager interface {
 	GetResult(key protocol.PredictionProfileKey) (protocol.PredictionResult, error)
 }
 
-var _ PredictionManager = &predictionMgrImpl{}
+var _ PredictionManager = &PredictionMgrImpl{}
 
-type predictionMgrImpl struct {
+type PredictionMgrImpl struct {
 	metricsRepo     metricscollector.MetricsRepository
 	checkpoint      checkpoint.Checkpoint
 	workloadFetcher workloadfetcher.WorkloadFetcher
 	profiler        profiler.Profiler
 }
 
-func (p *predictionMgrImpl) Run() error {
+func InitPredictMgr() *PredictionMgrImpl {
+
+	m := metricscollector.InitMetricRepo()
+	c := checkpoint.InitCheckpoint()
+	w := workloadfetcher.InitWorkloadfetcher()
+	p := profiler.InitProfiler()
+
+	predictMgr := &PredictionMgrImpl{
+		metricsRepo:     m,
+		checkpoint:      c,
+		workloadFetcher: w,
+		profiler:        p,
+	}
+	return predictMgr
+}
+
+func (p *PredictionMgrImpl) Run() error {
 	// run checkpoint to load all history data
 	// start workload fetcher waiting for workloads
 	// start metrics repo ready for collect
@@ -49,28 +67,40 @@ func (p *predictionMgrImpl) Run() error {
 	panic("implement me")
 }
 
-func (p *predictionMgrImpl) Started() bool {
+func (p *PredictionMgrImpl) Started() bool {
 	// return true only if all components are started
 	panic("implement me")
 }
 
-func (p *predictionMgrImpl) Register(profiles ...protocol.PredictionProfile) error {
+func (p *PredictionMgrImpl) Register(profiles ...protocol.PredictionProfile) error {
 	// return error if not started
+	if !p.Started() {
+		return fmt.Errorf("Profiler did not start.")
+	}
 	// add workload to WorkloadFetcher
+	p.workloadFetcher.AddWorkloads(profiles)
 	// subscribe metric to metricsRepo
+	p.metricsRepo.Register()
 	// add model to Profiler
 	panic("implement me")
 }
 
-func (p *predictionMgrImpl) Unregister(keys ...protocol.PredictionProfileKey) error {
+func (p *PredictionMgrImpl) Unregister(keys ...protocol.PredictionProfileKey) error {
 	// return error if not started
 	// remove workload from WorkloadFetcher
 	// unsubscribe metric from metricsRepo
 	// remove model from Profiler
+	p.workloadFetcher.RemoveWorkloads()
+	p.metricsRepo.Unregister()
 	panic("implement me")
 }
 
-func (p *predictionMgrImpl) GetResult(key protocol.PredictionProfileKey) (protocol.PredictionResult, error) {
+func (p *PredictionMgrImpl) GetResult(key protocol.PredictionProfileKey) (protocol.PredictionResult, error) {
+	//get result and fill status
 	//TODO implement me
-	panic("implement me")
+	res, err := p.profiler.GetResult(key)
+	if err != nil {
+		return nil, err
+	}
+	return res, err
 }

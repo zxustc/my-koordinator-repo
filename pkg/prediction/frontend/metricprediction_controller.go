@@ -4,6 +4,8 @@ import (
 	"context"
 
 	analysisv1alpha1 "github.com/koordinator-sh/koordinator/apis/analysis/v1alpha1"
+	"github.com/koordinator-sh/koordinator/pkg/prediction/manager"
+	"github.com/koordinator-sh/koordinator/pkg/prediction/manager/protocol"
 	sharestate "github.com/koordinator-sh/koordinator/pkg/prediction/sharestat"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -21,8 +23,10 @@ const Name = "prediction"
 // MetricPrediction reconciles a MetricPrediction object
 type MetricPredictionReconcile struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Scheme       *runtime.Scheme
+	Recorder     record.EventRecorder
+	predictMgr   *manager.PredictionMgrImpl
+	ProfilerKeys []protocol.PredictionProfileKey
 }
 
 // +kubebuilder:rbac:groups=analysis.koordinator.sh,resources=metricpredictions,verbs=get;list;watch;create;update;patch;delete
@@ -41,13 +45,17 @@ func (r *MetricPredictionReconcile) Reconcile(ctx context.Context, req ctrl.Requ
 			}
 			return ctrl.Result{Requeue: true}, err
 		} else {
-			sharestate.UpdateShareState(req.NamespacedName)
+			predictKey := protocol.InitPredictionProfileKey(metricPrediction.Spec)
+			r.ProfilerKeys = append(r.ProfilerKeys, predictKey)
+			r.predictMgr.Register(predictKey)
+			//TODO: update to cluster(predictionManagerKey)
 			return ctrl.Result{}, nil
 		}
 	case "DELETE":
 		if err := r.Client.Get(ctx, req.NamespacedName, &metricPrediction); err != nil {
 			if errors.IsNotFound(err) {
-				sharestate.DeleteShareState(req.NamespacedName)
+				//TODO: delete from cluster(predictionManagerKey)
+
 				return ctrl.Result{}, nil
 			} else {
 				return ctrl.Result{Requeue: true}, err
@@ -71,11 +79,24 @@ func (r *MetricPredictionReconcile) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 }
 
-func Add(mgr ctrl.Manager) error {
+func (r *MetricPredictionReconcile) UpdateStatus() {
+	// List All crd keys or not?
+	for _, key := range r.ProfilerKeys {
+		status, err := r.predictMgr.GetResult(key)
+		if err != nil {
+			klog.Error("Error while Get Result:", err)
+			return
+		}
+		r.Client.Status().Update()
+	}
+}
+
+func Add(mgr ctrl.Manager, predictImpl *manager.PredictionMgrImpl) error {
 	reconciler := MetricPredictionReconcile{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("metric-prediction"),
+		Client:     mgr.GetClient(),
+		Scheme:     mgr.GetScheme(),
+		Recorder:   mgr.GetEventRecorderFor("metric-prediction"),
+		predictMgr: predictImpl,
 	}
 	return reconciler.SetupWithManager(mgr)
 }
