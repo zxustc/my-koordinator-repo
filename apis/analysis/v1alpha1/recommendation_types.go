@@ -47,6 +47,8 @@ type CrossVersionObjectReference struct {
 	Kind string `json:"kind"`
 	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
 	Name string `json:"name"`
+	// Namespace of the referent.
+	Namespace string `json:"namespace"`
 	// API version of the referent
 	APIVersion string `json:"apiVersion,omitempty"`
 }

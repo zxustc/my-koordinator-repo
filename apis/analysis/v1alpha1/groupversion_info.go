@@ -35,6 +35,9 @@ var (
 
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
+
+	// Kind is the kind of crd.
+	RecommendationKind = "Recommendation"
 )
 
 // Resource is required by pkg/client/listers/...
